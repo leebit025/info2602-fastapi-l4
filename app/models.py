@@ -1,10 +1,16 @@
 from sqlmodel import Field, SQLModel, Relationship
+from typing import Optional, List 
 from typing import Optional
-from pydantic import EmailStr   #insert at top of the file
+from pydantic import EmailStr   
 
 class Token(SQLModel):
     access_token: str
     token_type: str
+
+class UserCreate(SQLModel):
+    username:str
+    email: EmailStr = Field(max_length=255)
+    password: str = Field(min_length=8, max_length=128)
 
 class UserResponse(SQLModel):
     id: Optional[int]
@@ -23,8 +29,9 @@ class Admin(User, table=True):
 
 class RegularUser(User, table=True):
     role:str = "regular_user"
-
     todos: list['Todo'] = Relationship(back_populates="user")
+    
+    categories:list['Category'] = Relationship(back_populates="user")
 
 class TodoCategory(SQLModel, table=True):
     category_id: int = Field(foreign_key="category.id", primary_key=True)
@@ -35,7 +42,28 @@ class Category(SQLModel, table=True):
     user_id: int = Field(foreign_key="regularuser.id")
     text:str
 
+    user: RegularUser = Relationship(back_populates="categories")
     todos:list['Todo'] = Relationship(back_populates="categories", link_model=TodoCategory)
+
+class CategoryItem(SQLModel):
+    id: int
+    text: str
+    
+class CategoryCreate(SQLModel):
+    text: str
+    
+class TodoCreate(SQLModel):
+    text:str
+
+class TodoResponse(SQLModel):
+    id: Optional[int] = Field(primary_key=True, default=None)
+    text:str
+    done: bool = False
+    categories: List[CategoryItem] = []
+
+class TodoUpdate(SQLModel):
+    text: Optional[str] = None
+    done: Optional[bool] = None
 
 class Todo(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
